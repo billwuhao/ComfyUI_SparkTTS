@@ -1,0 +1,14 @@
+[project]
+name = "sparktts_mw"
+description = "Using Spark-TTS in Comfyui. Spark-TTS: An Efficient LLM-Based Text-to-Speech Model with Single-Stream Decoupled Speech Tokenss"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/billwuhao/ComfyUI_SparkTTS"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "mw"
+DisplayName = "ComfyUI_SparkTTS"
+Icon = "https://github.com/billwuhao/aiart.website/blob/master/hb.png"
