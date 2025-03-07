@@ -17,6 +17,7 @@ import json
 import re
 import os
 import torch
+import numpy as np
 from typing import Tuple
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -280,20 +281,26 @@ class SparkTTSRun:
         gender = None if gender == "None" else gender
         model = SparkTTS(tts_model_path)
         prompt_speech_path = f"{speaker_path}/{speaker}_prompt.wav"
-        with torch.no_grad():
-            wav = model.inference(
-                text,
-                prompt_speech_path,
-                prompt_text=speakers_info[speaker],
-                gender=gender,
-                pitch=pitch,
-                speed=speed,
-                # top_k=top_k,
-                # top_p=top_p,
-                # temperature=temperature,
-            )
+        texts = [i.strip() for i in text.split("\n\n") if  i.strip()]
+        audio_data = []
+        for i in texts:
+            with torch.no_grad():
+                wav = model.inference(
+                    i,
+                    prompt_speech_path,
+                    prompt_text=speakers_info[speaker],
+                    gender=gender,
+                    pitch=pitch,
+                    speed=speed,
+                    # top_k=top_k,
+                    # top_p=top_p,
+                    # temperature=temperature,
+                )
 
-        audio_tensor = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0).float()
+            audio_data.append(wav)
+        combined_wav = np.concatenate(audio_data)
+            
+        audio_tensor = torch.from_numpy(combined_wav).unsqueeze(0).unsqueeze(0).float()
         return ({"waveform": audio_tensor, "sample_rate": 16000},)
 
 
@@ -304,11 +311,11 @@ class SparkTTSClone:
         return {
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
-                "gender": (["female", "male", "None"],{"default": "female"}),
-                "pitch": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
-                "speed": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
+                # "gender": (["female", "male", "None"],{"default": "female"}),
+                # "pitch": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
+                # "speed": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
                 "clone_text": ("STRING", {"default": "", "multiline": True, "tooltip": "The clone audio's text."}),
-                "clone_audio_path": ("STRING", {"default": "", "multiline": False, "tooltip": "The clone audio's full path."}),
+                "clone_audio": ("AUDIO", ),
                 # "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
                 # "top_k": ("INT", {"default": 50, "min": 0}),
                 # "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
@@ -321,42 +328,66 @@ class SparkTTSClone:
     FUNCTION = "clone"
     CATEGORY = "MW-Spark-TTS"
 
-    def clone(self, text, clone_text, gender, pitch, speed, clone_audio_path
+    def clone(self, text, clone_text, clone_audio, 
+            #   gender, pitch, speed,
             #   temperature, 
             #   top_k, 
             #   top_p, 
             #   seed
               ):
-        gender = None if gender == "None" else gender
+        # gender = None if gender == "None" else gender
+        
+        prompt_wav = clone_audio["waveform"].squeeze(0).squeeze(0).numpy()
+        prompt_wav_sr = clone_audio["sample_rate"]
+        
+        import soundfile as sf
+        import io
+        # 创建字节流缓冲区
+        buffer = io.BytesIO()
+        # 将音频数据写入 WAV 格式的字节流
+        sf.write(buffer, prompt_wav, prompt_wav_sr, format='WAV')
+        # 获取字节流数据
+        audio_bytes = buffer.getvalue()
+        # 关闭缓冲区（可选，BytesIO 不需要显式关闭，但为了清晰）
+        buffer.close()
+        # 创建新的 BytesIO 对象以读取字节流
+        clone_audio_path = io.BytesIO(audio_bytes)
         model = SparkTTS(tts_model_path)
-        prompt_speech_path = clone_audio_path
-        with torch.no_grad():
-            wav = model.inference(
-                text,
-                prompt_speech_path,
-                prompt_text=clone_text,
-                gender=gender,
-                pitch=pitch,
-                speed=speed,
-                # top_k=top_k,
-                # top_p=top_p,
-                # temperature=temperature,
-            )
 
-        audio_tensor = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0).float()
+        texts = [i.strip() for i in text.split("\n\n") if  i.strip()]
+        audio_data = []
+        for i in texts:
+            with torch.no_grad():
+                wav = model.inference(
+                    i,
+                    clone_audio_path,
+                    prompt_text=clone_text,
+                    # gender=gender,
+                    # pitch=pitch,
+                    # speed=speed,
+                    # top_k=top_k,
+                    # top_p=top_p,
+                    # temperature=temperature,
+                )
+
+            clone_audio_path.seek(0) 
+            audio_data.append(wav)
+        combined_wav = np.concatenate(audio_data)
+            
+        audio_tensor = torch.from_numpy(combined_wav).unsqueeze(0).unsqueeze(0).float()
         return ({"waveform": audio_tensor, "sample_rate": 16000},)
 
     
-from MWAudioRecorder import AudioRecorder
+from AudioRecorderSpark import AudioRecorderSpark
 
 NODE_CLASS_MAPPINGS = {
     "SparkTTSRun": SparkTTSRun,
     "SparkTTSClone": SparkTTSClone,
-    "AudioRecorder": AudioRecorder
+    "AudioRecorderSpark": AudioRecorderSpark
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SparkTTSRun": "Spark TTS Run",
     "SparkTTSClone": "Spark TTS Clone",
-    "AudioRecorder": "MW Audio Recorder"
+    "AudioRecorderSpark": "MW Audio Recorder for Spark"
 }

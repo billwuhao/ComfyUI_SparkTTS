@@ -6,7 +6,7 @@ import sounddevice as sd
 from scipy import ndimage
 from comfy.utils import ProgressBar
 
-class AudioRecorder:
+class AudioRecorderSpark:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -132,9 +132,9 @@ class AudioRecorder:
 
 # 节点注册
 NODE_CLASS_MAPPINGS = {
-    "AudioRecorder": AudioRecorder
+    "AudioRecorderSpark": AudioRecorderSpark
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "AudioRecorder": "MW Audio Recorder"
+    "AudioRecorderSpark": "MW Audio Recorder"
 }
