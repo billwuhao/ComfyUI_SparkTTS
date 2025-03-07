@@ -8,7 +8,9 @@ Using Spark-TTS in ComfyUI. Spark-TTS: An efficient text-to-speech model based o
 
 ## Updates
 
-[2025-03-07] ⚒️: Released version v1.0.0.
+[2025-03-07] ⚒️: Released version v1.0.0. New recording node `MW Audio Recorder for Spark` can be used to record audio with a microphone, and the progress bar displays the recording progress:
+
+![](https://github.com/billwuhao/ComfyUI_StepAudioTTS/blob/master/assets/2025-03-06_21-29-09.png)
 
 ## Model Download
 

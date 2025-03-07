@@ -9,7 +9,9 @@
 
 ## 更新
 
-[2025-03-07]⚒️: 发布版本 v1.0.0.
+[2025-03-07]⚒️: 发布版本 v1.0.0. 录音节点 `MW Audio Recorder for Spark` 可用麦克风录制音频, 进度条显示录制进度:
+
+![](https://github.com/billwuhao/ComfyUI_StepAudioTTS/blob/master/assets/2025-03-06_21-29-09.png)
 
 ## 模型下载
 
