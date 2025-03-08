@@ -17,6 +17,7 @@ import json
 import re
 import os
 import torch
+import tempfile
 import numpy as np
 from typing import Tuple
 from pathlib import Path
@@ -24,7 +25,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from sparktts.utils.file import load_config
 from sparktts.models.audio_tokenizer import BiCodecTokenizer
-from sparktts.utils.token_parser import LEVELS_MAP, GENDER_MAP, TASK_TOKEN_MAP
+from sparktts.utils.token_parser import (LEVELS_MAP, 
+                                        GENDER_MAP, 
+                                        TASK_TOKEN_MAP, 
+                                        # AGE_MAP, 
+                                        # EMO_MAP
+                                        )
 
 
 node_dir = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +68,7 @@ class SparkTTS:
     def process_prompt(
         self,
         text: str,
-        prompt_speech_path: Path,
+        prompt_speech_path:  Path,
         prompt_text: str = None,
     ) -> Tuple[str, torch.Tensor]:
         """
@@ -70,7 +76,7 @@ class SparkTTS:
 
         Args:
             text (str): The text input to be converted to speech.
-            prompt_speech_path (Path): Path to the audio file used as a prompt.
+            prompt_speech_path: Path to the audio file used as a prompt.
             prompt_text (str, optional): Transcript of the prompt audio.
 
         Return:
@@ -118,10 +124,14 @@ class SparkTTS:
 
     def process_prompt_control(
         self,
-        gender: str,
+        gender: str, 
+        # age, 
+        # emotion,
         pitch: str,
         speed: str,
         text: str,
+        # pitch_var, 
+        # loudness,
     ):
         """
         Process input for voice creation.
@@ -142,13 +152,28 @@ class SparkTTS:
         gender_id = GENDER_MAP[gender]
         pitch_level_id = LEVELS_MAP[pitch]
         speed_level_id = LEVELS_MAP[speed]
+        # age_id = AGE_MAP[age]
+        # emotion_id = EMO_MAP[emotion]
+        # pitch_var_level_id = LEVELS_MAP[pitch_var]
+        # loudness_level_id = LEVELS_MAP[loudness]
 
+        # pitch_var_tokens = f"<|pitch_var_label_{pitch_var_level_id}|>"
+        # loudness_label_tokens = f"<|loudness_label_{loudness_level_id}|>"
+        # age_tokens = f"<|age_{age_id}|>"
+        # emotion_tokens = f"<|emotion_{emotion_id}|>"
         pitch_label_tokens = f"<|pitch_label_{pitch_level_id}|>"
         speed_label_tokens = f"<|speed_label_{speed_level_id}|>"
         gender_tokens = f"<|gender_{gender_id}|>"
 
         attribte_tokens = "".join(
-            [gender_tokens, pitch_label_tokens, speed_label_tokens]
+            [gender_tokens, 
+            pitch_label_tokens, 
+            speed_label_tokens, 
+            # age_tokens, 
+            # emotion_tokens, 
+            # pitch_var_tokens, 
+            # loudness_label_tokens
+            ]
         )
 
         control_tts_inputs = [
@@ -170,18 +195,23 @@ class SparkTTS:
         prompt_speech_path: Path = None,
         prompt_text: str = None,
         gender: str = None,
+        # age: str = None,
+        # emotion: str = None,
         pitch: str = None,
         speed: str = None,
+        # pitch_var = None, 
+        # loudness = None,
         temperature: float = 0.8,
         top_k: float = 50,
         top_p: float = 0.95,
+        max_new_tokens=3000,
     ) -> torch.Tensor:
         """
         Performs inference to generate speech from text, incorporating prompt audio and/or text.
 
         Args:
             text (str): The text input to be converted to speech.
-            prompt_speech_path (Path): Path to the audio file used as a prompt.
+            prompt_speech_path: Path to the audio file used as a prompt.
             prompt_text (str, optional): Transcript of the prompt audio.
             gender (str): female | male.
             pitch (str): very_low | low | moderate | high | very_high
@@ -194,7 +224,15 @@ class SparkTTS:
             torch.Tensor: Generated waveform as a tensor.
         """
         if gender is not None:
-            prompt = self.process_prompt_control(gender, pitch, speed, text)
+            prompt = self.process_prompt_control(gender, 
+                                                #  age, 
+                                                #  emotion, 
+                                                 pitch, 
+                                                 speed, 
+                                                 text, 
+                                                #  pitch_var, 
+                                                #  loudness
+                                                 )
 
         else:
             prompt, global_token_ids = self.process_prompt(
@@ -205,7 +243,7 @@ class SparkTTS:
         # Generate speech using the model
         generated_ids = self.model.generate(
             **model_inputs,
-            max_new_tokens=3000,
+            max_new_tokens=max_new_tokens,
             do_sample=True,
             top_k=top_k,
             top_p=top_p,
@@ -245,10 +283,6 @@ class SparkTTS:
         return wav
 
 
-with open(f"{speaker_path}/speakers_info.json", "r", encoding="utf-8") as f:
-    speakers_info = json.load(f)
-speakers = list(speakers_info.keys())
-
 class SparkTTSRun:
     @classmethod
     def INPUT_TYPES(s):
@@ -256,13 +290,20 @@ class SparkTTSRun:
         return {
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
-                "speaker": (speakers, {"default": "婷婷"}),
-                "gender": (["female", "male", "None"],{"default": "female"}),
+                "gender": (["female", "male"],{"default": "female"}),
+                # "age": (["Child", "Teenager", "Youth-Adult", "Middle-aged", "Elderly"], {"default": "Youth-Adult"}),
+                # "emotion": (["UNKNOWN", "NEUTRAL", "ANGRY", "HAPPY", "SAD", "FEARFUL", "DISGUSTED", "SURPRISED", 
+                #            "SARCASTIC", "EXCITED", "SLEEPY", "CONFUSED", "EMPHASIS", "LAUGHING", "SINGING", 
+                #            "WORRIED", "WHISPER", "ANXIOUS", "NO-AGREEMENT", "APOLOGETIC", "CONCERNED", 
+                #            "ENUNCIATED", "ASSERTIVE", "ENCOURAGING", "CONTEMPT"], {"default": "NEUTRAL"}),
                 "pitch": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
                 "speed": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
+                # "pitch_var": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
+                # "loudness": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
                 # "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
                 # "top_k": ("INT", {"default": 50, "min": 0}),
                 # "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
+                # "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 # "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
@@ -272,29 +313,39 @@ class SparkTTSRun:
     FUNCTION = "speak"
     CATEGORY = "MW-Spark-TTS"
 
-    def speak(self, text, speaker, gender, pitch, speed, 
+    def speak(self, text, gender, 
+            #   age, 
+            #   emotion, 
+              pitch, 
+              speed, 
+            #   pitch_var, 
+            #   loudness,
             #   temperature, 
             #   top_k, 
             #   top_p, 
+            #   max_new_tokens,
             #   seed
               ):
-        gender = None if gender == "None" else gender
+
         model = SparkTTS(tts_model_path)
-        prompt_speech_path = f"{speaker_path}/{speaker}_prompt.wav"
+
         texts = [i.strip() for i in text.split("\n\n") if  i.strip()]
         audio_data = []
         for i in texts:
             with torch.no_grad():
                 wav = model.inference(
                     i,
-                    prompt_speech_path,
-                    prompt_text=speakers_info[speaker],
                     gender=gender,
+                    # age=age,
+                    # emotion=emotion,
                     pitch=pitch,
-                    speed=speed,
+                    speed=speed, 
+                    # pitch_var=pitch_var, 
+                    # loudness=loudness,
                     # top_k=top_k,
                     # top_p=top_p,
                     # temperature=temperature,
+                    # max_new_tokens=max_new_tokens,
                 )
 
             audio_data.append(wav)
@@ -303,6 +354,10 @@ class SparkTTSRun:
         audio_tensor = torch.from_numpy(combined_wav).unsqueeze(0).unsqueeze(0).float()
         return ({"waveform": audio_tensor, "sample_rate": 16000},)
 
+
+with open(f"{speaker_path}/speakers_info.json", "r", encoding="utf-8") as f:
+    speakers_info = json.load(f)
+speakers = list(speakers_info.keys())
 
 class SparkTTSClone:
     @classmethod
@@ -311,16 +366,17 @@ class SparkTTSClone:
         return {
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
-                # "gender": (["female", "male", "None"],{"default": "female"}),
-                # "pitch": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
-                # "speed": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
-                "clone_text": ("STRING", {"default": "", "multiline": True, "tooltip": "The clone audio's text."}),
-                "clone_audio": ("AUDIO", ),
+                "cloned_speaker": (speakers, {"default": "婷婷", "tooltip": "Cloned speaker already defined in the JSON file. If you choose `custom_clone_audio`, it will be invalid"}),
                 # "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
                 # "top_k": ("INT", {"default": 50, "min": 0}),
                 # "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
+                # "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 # "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-            }
+            },
+            "optional": {
+                "custom_clone_text": ("STRING", {"default": "", "multiline": True, "tooltip": "(optional) The clone audio's text."}),
+                "custom_clone_audio": ("AUDIO", ),
+            },
         }
 
     RETURN_TYPES = ("AUDIO",)
@@ -328,57 +384,69 @@ class SparkTTSClone:
     FUNCTION = "clone"
     CATEGORY = "MW-Spark-TTS"
 
-    def clone(self, text, clone_text, clone_audio, 
-            #   gender, pitch, speed,
+    def clone(self, text, cloned_speaker, custom_clone_text=None, custom_clone_audio=None, 
             #   temperature, 
             #   top_k, 
             #   top_p, 
+            #   max_new_tokens,
             #   seed
               ):
-        # gender = None if gender == "None" else gender
+
+        # 检查是否提供了自定义音频
+        if custom_clone_audio is not None:
+            # 检查是否提供了自定义文本
+            if custom_clone_text and custom_clone_text.strip():
+                clone_text = custom_clone_text
+            else:
+                clone_text = None
+            # 提取传入的音频数据和采样率
+            waveform = custom_clone_audio["waveform"].squeeze(0)
+            sample_rate = custom_clone_audio["sample_rate"]
+            
+            import torchaudio
+
+            # 创建临时文件
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
+                audio_file_path = temp_file.name
+            
+            # 使用 torchaudio.save() 保存临时文件
+            torchaudio.save(audio_file_path, waveform, sample_rate, format="wav", 
+                           bits_per_sample=16, encoding="PCM_S")
+
+        else:
+            audio_file_path = f"{speaker_path}/{cloned_speaker}_prompt.wav"
+            clone_text = speakers_info[cloned_speaker]
         
-        prompt_wav = clone_audio["waveform"].squeeze(0).squeeze(0).numpy()
-        prompt_wav_sr = clone_audio["sample_rate"]
-        
-        import soundfile as sf
-        import io
-        # 创建字节流缓冲区
-        buffer = io.BytesIO()
-        # 将音频数据写入 WAV 格式的字节流
-        sf.write(buffer, prompt_wav, prompt_wav_sr, format='WAV')
-        # 获取字节流数据
-        audio_bytes = buffer.getvalue()
-        # 关闭缓冲区（可选，BytesIO 不需要显式关闭，但为了清晰）
-        buffer.close()
-        # 创建新的 BytesIO 对象以读取字节流
-        clone_audio_path = io.BytesIO(audio_bytes)
         model = SparkTTS(tts_model_path)
 
-        texts = [i.strip() for i in text.split("\n\n") if  i.strip()]
+        # 分割输入文本并生成音频
+        texts = [i.strip() for i in text.split("\n\n") if i.strip()]
         audio_data = []
         for i in texts:
             with torch.no_grad():
                 wav = model.inference(
                     i,
-                    clone_audio_path,
+                    prompt_speech_path=audio_file_path,
                     prompt_text=clone_text,
-                    # gender=gender,
-                    # pitch=pitch,
-                    # speed=speed,
+                    gender=None,
                     # top_k=top_k,
                     # top_p=top_p,
                     # temperature=temperature,
                 )
+                audio_data.append(wav)
 
-            clone_audio_path.seek(0) 
-            audio_data.append(wav)
+        # 生成完成后删除临时文件
+        if custom_clone_audio is not None:
+            if os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+
         combined_wav = np.concatenate(audio_data)
             
         audio_tensor = torch.from_numpy(combined_wav).unsqueeze(0).unsqueeze(0).float()
         return ({"waveform": audio_tensor, "sample_rate": 16000},)
 
     
-from AudioRecorderSpark import AudioRecorderSpark
+from MWAudioRecorderSpark import AudioRecorderSpark
 
 NODE_CLASS_MAPPINGS = {
     "SparkTTSRun": SparkTTSRun,
@@ -389,5 +457,5 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SparkTTSRun": "Spark TTS Run",
     "SparkTTSClone": "Spark TTS Clone",
-    "AudioRecorderSpark": "MW Audio Recorder for Spark"
+    "AudioRecorderSpark": "MW Audio Recorder"
 }

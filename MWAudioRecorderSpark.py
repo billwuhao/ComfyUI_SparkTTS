@@ -48,7 +48,7 @@ class AudioRecorderSpark:
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "record_and_clean"
-    CATEGORY = "MW-Step-Audio"
+    CATEGORY = "MW-Spark-TTS"
 
     def _stft(self, y, n_fft):
         hop = n_fft // 4
@@ -131,10 +131,10 @@ class AudioRecorderSpark:
         return (final_audio,)
 
 # 节点注册
-NODE_CLASS_MAPPINGS = {
-    "AudioRecorderSpark": AudioRecorderSpark
-}
+# NODE_CLASS_MAPPINGS = {
+#     "AudioRecorderSpark": AudioRecorderSpark
+# }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "AudioRecorderSpark": "MW Audio Recorder"
-}
+# NODE_DISPLAY_NAME_MAPPINGS = {
+#     "AudioRecorderSpark": "MW Audio Recorder"
+# }

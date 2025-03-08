@@ -83,7 +83,7 @@ def load_audio(
     r"""Load audio file with target sampling rate and lsength
 
     Args:
-        adfile (Path): path to audio file.
+        adfile (Path): Path to audio file.
         sampling_rate (int, optional): target sampling rate. Defaults to None.
         length (int, optional): target audio length. Defaults to None.
         volume_normalize (bool, optional): whether perform volume normalization. Defaults to False.
@@ -93,7 +93,6 @@ def load_audio(
     Returns:
         audio (np.ndarray): audio
     """
-
     audio, sr = soundfile.read(adfile)
     if len(audio.shape) > 1:
         audio = audio[:, 0]
