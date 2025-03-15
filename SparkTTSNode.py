@@ -22,6 +22,10 @@ import numpy as np
 from typing import Tuple
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
 from sparktts.utils.file import load_config
 from sparktts.models.audio_tokenizer import BiCodecTokenizer
@@ -300,10 +304,10 @@ class SparkTTSRun:
                 "speed": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
                 # "pitch_var": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
                 # "loudness": (["very_low", "low", "moderate", "high", "very_high"],{"default": "moderate"}),
-                # "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
-                # "top_k": ("INT", {"default": 50, "min": 0}),
-                # "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
-                # "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
+                "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
+                "top_k": ("INT", {"default": 50, "min": 0}),
+                "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
+                "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 # "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
@@ -320,10 +324,10 @@ class SparkTTSRun:
               speed, 
             #   pitch_var, 
             #   loudness,
-            #   temperature, 
-            #   top_k, 
-            #   top_p, 
-            #   max_new_tokens,
+              temperature, 
+              top_k, 
+              top_p, 
+              max_new_tokens,
             #   seed
               ):
 
@@ -342,10 +346,10 @@ class SparkTTSRun:
                     speed=speed, 
                     # pitch_var=pitch_var, 
                     # loudness=loudness,
-                    # top_k=top_k,
-                    # top_p=top_p,
-                    # temperature=temperature,
-                    # max_new_tokens=max_new_tokens,
+                    top_k=top_k,
+                    top_p=top_p,
+                    temperature=temperature,
+                    max_new_tokens=max_new_tokens,
                 )
 
             audio_data.append(wav)
@@ -384,11 +388,12 @@ class SparkTTSClone:
     FUNCTION = "clone"
     CATEGORY = "MW-Spark-TTS"
 
-    def clone(self, text, cloned_speaker, custom_clone_text=None, custom_clone_audio=None, 
-            #   temperature, 
-            #   top_k, 
-            #   top_p, 
-            #   max_new_tokens,
+    def clone(self, text, cloned_speaker,
+              temperature, 
+              top_k, 
+              top_p, 
+              max_new_tokens,
+              custom_clone_text=None, custom_clone_audio=None, 
             #   seed
               ):
 
@@ -429,9 +434,10 @@ class SparkTTSClone:
                     prompt_speech_path=audio_file_path,
                     prompt_text=clone_text,
                     gender=None,
-                    # top_k=top_k,
-                    # top_p=top_p,
-                    # temperature=temperature,
+                    top_k=top_k,
+                    top_p=top_p,
+                    temperature=temperature,
+                    max_new_tokens=max_new_tokens,
                 )
                 audio_data.append(wav)
 

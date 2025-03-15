@@ -1,40 +1,50 @@
 [中文](README.md) | [English](README-en.md)
 
-# Spark-TTS 的 Comfyui 节点
+# Spark-TTS ComfyUI Node
 
-在 Comfyui 中使用 Spark-TTS. Spark-TTS: 一种基于 LLM 的高效文本到语音模型，具有 Single-Stream 语音 Tokens.
+Using Spark-TTS in ComfyUI. Spark-TTS: An efficient text-to-speech model based on LLM with Single-Stream voice tokens.
 
 ![](https://github.com/billwuhao/ComfyUI_SparkTTS/blob/master/images/2025-03-07_03-08-47.png)
 
+## Updates
 
-## 更新
-
-[2025-03-07]⚒️: 发布版本 v1.0.0. 录音节点 `MW Audio Recorder for Spark` 可用麦克风录制音频, 进度条显示录制进度:
+[2025-03-07] ⚒️: Released version v1.0.0. New recording node `MW Audio Recorder for Spark` can be used to record audio with a microphone, and the progress bar displays the recording progress:
 
 ![](https://github.com/billwuhao/ComfyUI_StepAudioTTS/blob/master/assets/2025-03-06_21-29-09.png)
 
-## 模型下载
+## Installation
 
-下列模型下载到 `ComfyUI\models\TTS` 文件夹中.
+```
+cd ComfyUI/custom_nodes
+git clone https://github.com/billwuhao/ComfyUI_SparkTTS.git
+cd ComfyUI_SparkTTS
+pip install -r requirements.txt
 
-[Spark-TTS-0.5B](https://https://huggingface.co/SparkAudio/Spark-TTS-0.5B)
+# python_embeded
+./python_embeded/python.exe -m pip install -r requirements.txt
+```
 
-将本仓库中 `Step-Audio-speakers` 文件夹移动到 `ComfyUI\models\TTS` 文件夹中. 
+## Model Download
 
-结构如下:
+Download the following models to the `ComfyUI\models\TTS` folder.
 
+[Spark-TTS-0.5B](https://huggingface.co/SparkAudio/Spark-TTS-0.5B)
+
+Move the `Step-Audio-speakers` folder from this repository to the `ComfyUI\models\TTS` folder.
+
+The structure should look like this:
 ```
 ComfyUI\models\TTS
 ├── Spark-TTS-0.5B
 ├── Step-Audio-speakers
 ```
 
-**注意**: 如果你已经安装过 [ComfyUI_StepAudioTTS](https://github.com/billwuhao/ComfyUI_StepAudioTTS), 则无需移动, 它们是共享音频和配置文件的.
+**Note**: If you have already installed [ComfyUI_StepAudioTTS](https://github.com/billwuhao/ComfyUI_StepAudioTTS), there’s no need to move it, as they share audio and configuration files.
 
-然后就可在 `ComfyUI\models\TTS\Step-Audio-speakers` 文件夹下随意自定义说话者即可使用. 注意说话者名称配置一定要一致:
+You can then freely customize speakers under the `ComfyUI\models\TTS\Step-Audio-speakers` folder for use. Ensure that the speaker name configuration matches exactly:
 
 ![](https://github.com/billwuhao/ComfyUI_SparkTTS/blob/master/images/2025-03-07_03-30-51.png)
 
-## 致谢
+## Acknowledgments
 
 [Spark-TTS](https://github.com/SparkAudio/Spark-TTS.git)
