@@ -371,10 +371,10 @@ class SparkTTSClone:
             "required": {
                 "text": ("STRING", {"default": "", "multiline": True}),
                 "cloned_speaker": (speakers, {"default": "婷婷", "tooltip": "Cloned speaker already defined in the JSON file. If you choose `custom_clone_audio`, it will be invalid"}),
-                # "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
-                # "top_k": ("INT", {"default": 50, "min": 0}),
-                # "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
-                # "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
+                "temperature": ("FLOAT", {"default": 0.8, "min": 0, "max": 1, "step": 0.1}),
+                "top_k": ("INT", {"default": 50, "min": 0}),
+                "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
+                "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 # "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             },
             "optional": {
