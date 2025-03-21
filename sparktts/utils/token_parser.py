@@ -152,6 +152,12 @@ class TokenParser:
         emo_id = EMO_MAP[emotion]
 
         return f"<|emotion_{emo_id}|>"
+    
+    @staticmethod
+    def emotion_value(emotion: str):
+        emo_id = max(0, int(emotion))
+        emo_id = min(100, int(emotion))
+        return f"<|emotion_{emo_id}|>"
 
 
 # test

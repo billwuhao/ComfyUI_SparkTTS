@@ -9,6 +9,8 @@
 
 ## 更新
 
+[2025-03-21]⚒️: 重构代码, 可选是否卸载模型, 生成速度更快. 添加更多可调参数. 支持克隆不同语言之间的声音.
+
 [2025-03-07]⚒️: 发布版本 v1.0.0. 录音节点 `MW Audio Recorder for Spark` 可用麦克风录制音频, 进度条显示录制进度:
 
 ![](https://github.com/billwuhao/ComfyUI_StepAudioTTS/blob/master/assets/2025-03-06_21-29-09.png)
