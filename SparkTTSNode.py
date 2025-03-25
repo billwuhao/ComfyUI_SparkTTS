@@ -376,7 +376,7 @@ class SparkTTSRun:
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "speak"
-    CATEGORY = "MW/MW-Spark-TTS"
+    CATEGORY = "🎤MW/MW-Spark-TTS"
 
     def speak(self, text, gender, 
             #   age, 
@@ -456,7 +456,7 @@ class SparkTTSClone:
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "clone"
-    CATEGORY = "MW/MW-Spark-TTS"
+    CATEGORY = "🎤MW/MW-Spark-TTS"
 
     def clone(self, text, 
               cloned_speaker,

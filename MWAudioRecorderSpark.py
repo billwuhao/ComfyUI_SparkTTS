@@ -17,7 +17,6 @@ class AudioRecorderSpark:
                 "record_sec": ("INT", {
                     "default": 5, 
                     "min": 1, 
-                    "max": 60,
                     "step": 1  # 整数秒递增
                 }),
                 "sample_rate": (["16000", "44100", "48000"], {  # 限定标准采样率
@@ -31,15 +30,15 @@ class AudioRecorderSpark:
                 }),
                 "sensitivity": ("FLOAT", {  # 灵敏度精确控制
                     "default": 1.2,
-                    "min": 0.5,
+                    "min": 0.1,
                     "max": 3.0,
                     "step": 0.1  # 0.1步进
                 }),
                 "smooth": ("INT", {  # 确保为奇数
-                    "default": 5,
+                    "default": 1,
                     "min": 1,
-                    "max": 11,
-                    "step": 2  # 生成1,3,5,7,9,11
+                    "max": 7,
+                    "step": 2  # 生成1,3,5,7
                 }),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             }
@@ -48,7 +47,7 @@ class AudioRecorderSpark:
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("audio",)
     FUNCTION = "record_and_clean"
-    CATEGORY = "MW/MW-Spark-TTS"
+    CATEGORY = "🎤MW/MW-Spark-TTS"
 
     def _stft(self, y, n_fft):
         hop = n_fft // 4
