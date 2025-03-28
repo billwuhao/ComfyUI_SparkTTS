@@ -61,17 +61,27 @@ def load_models(device, use_cache=True):
             CACHED_MODELS["model"],
             CACHED_MODELS["audio_tokenizer"],
         )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(f"{tts_model_path}/LLM")
+        model = AutoModelForCausalLM.from_pretrained(f"{tts_model_path}/LLM")
+        model.to(device)
+        audio_tokenizer = BiCodecTokenizer(tts_model_path, device=device)
+        
+        CACHED_MODELS["tokenizer"] = tokenizer
+        CACHED_MODELS["model"] = model
+        CACHED_MODELS["audio_tokenizer"] = audio_tokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(f"{tts_model_path}/LLM")
-    model = AutoModelForCausalLM.from_pretrained(f"{tts_model_path}/LLM")
-    model.to(device)
-    audio_tokenizer = BiCodecTokenizer(tts_model_path, device=device)
-    
-    CACHED_MODELS["tokenizer"] = tokenizer
-    CACHED_MODELS["model"] = model
-    CACHED_MODELS["audio_tokenizer"] = audio_tokenizer
+        del tokenizer
+        del model
+        del audio_tokenizer
+        gc.collect()
+        torch.cuda.empty_cache()
 
-    return tokenizer, model, audio_tokenizer
+        return (
+            CACHED_MODELS["tokenizer"],
+            CACHED_MODELS["model"],
+            CACHED_MODELS["audio_tokenizer"],
+        )
 
 
 def clear_cached_models():
@@ -420,9 +430,10 @@ class SparkTTSRun:
 
         if unload_model:
             del tokenizer, model, audio_tokenizer
-            gc.collect()
             clear_cached_models()
             tts_model.cleanup()
+            gc.collect()
+            torch.cuda.empty_cache()
             
         return ({"waveform": audio_tensor, "sample_rate": 16000},)
 
@@ -519,9 +530,10 @@ class SparkTTSClone:
 
         if unload_model:
             del tokenizer, model, audio_tokenizer
-            gc.collect()
             clear_cached_models()
             tts_model.cleanup()
+            gc.collect()
+            torch.cuda.empty_cache()
 
         # 生成完成后删除临时文件
         if custom_clone_audio is not None:
