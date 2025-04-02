@@ -1,8 +1,8 @@
-[中文](README.md) | [English](README-en.md)
+[中文](README-CN.md) | [English](README.md)
 
 # Spark-TTS 的 Comfyui 节点
 
-在 Comfyui 中使用 Spark-TTS. Spark-TTS: 一种基于 LLM 的高效文本到语音模型，具有 Single-Stream 语音 Tokens.
+在 Comfyui 中使用 Spark-TTS. Spark-TTS: 一种基于 LLM 的高效文本到语音模型，能克隆各种语言的声音.
 
 ![](https://github.com/billwuhao/ComfyUI_SparkTTS/blob/master/images/2025-03-07_03-08-47.png)
 
