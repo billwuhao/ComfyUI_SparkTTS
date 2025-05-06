@@ -11,8 +11,6 @@ class AudioRecorderSpark:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                # 触发控制
-                "trigger": ("BOOLEAN", {"default": False}),
                 # 录音时长
                 "record_sec": ("INT", {
                     "default": 5, 
@@ -41,6 +39,10 @@ class AudioRecorderSpark:
                     "step": 2  # 生成1,3,5,7
                 }),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
+            },
+            "optional": {
+                # 触发控制
+                "enable": ("BOOLEAN", {"default": True}),
             }
         }
 

@@ -11,6 +11,7 @@ import sys
 import logging
 import platform
 import gc
+import folder_paths
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
@@ -26,18 +27,10 @@ from sparktts.utils.token_parser import (TokenParser,
                                         )
 
 
-node_dir = os.path.dirname(os.path.abspath(__file__))
-comfy_path = os.path.dirname(os.path.dirname(node_dir))
-model_path = os.path.join(comfy_path, "models/TTS")
+models_dir = folder_paths.models_dir
+model_path = os.path.join(models_dir, "TTS")
 tts_model_path = os.path.join(model_path, "Spark-TTS-0.5B")
 speaker_path = os.path.join(model_path, "Step-Audio-speakers")
-
-
-CACHED_MODELS = {
-    "tokenizer": None,
-    "model": None,
-    "audio_tokenizer": None,
-}
 
 # Convert device argument to torch.device
 if platform.system() == "Darwin" and torch.backends.mps.is_available():
@@ -54,42 +47,13 @@ else:
     logging.info("GPU acceleration not available, using CPU")
 
 
-def load_models(device, use_cache=True):
-    if use_cache and all(CACHED_MODELS.values()):
-        return (
-            CACHED_MODELS["tokenizer"],
-            CACHED_MODELS["model"],
-            CACHED_MODELS["audio_tokenizer"],
-        )
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(f"{tts_model_path}/LLM")
-        model = AutoModelForCausalLM.from_pretrained(f"{tts_model_path}/LLM")
-        model.to(device)
-        audio_tokenizer = BiCodecTokenizer(tts_model_path, device=device)
-        
-        CACHED_MODELS["tokenizer"] = tokenizer
-        CACHED_MODELS["model"] = model
-        CACHED_MODELS["audio_tokenizer"] = audio_tokenizer
+def load_models(device):
+    tokenizer = AutoTokenizer.from_pretrained(f"{tts_model_path}/LLM")
+    model = AutoModelForCausalLM.from_pretrained(f"{tts_model_path}/LLM")
+    model.to(device).eval()
+    audio_tokenizer = BiCodecTokenizer(tts_model_path, device=device)
 
-        del tokenizer
-        del model
-        del audio_tokenizer
-        gc.collect()
-        torch.cuda.empty_cache()
-
-        return (
-            CACHED_MODELS["tokenizer"],
-            CACHED_MODELS["model"],
-            CACHED_MODELS["audio_tokenizer"],
-        )
-
-
-def clear_cached_models():
-    for key in CACHED_MODELS:
-        CACHED_MODELS[key] = None
-    gc.collect()
-    torch.cuda.empty_cache()
-
+    return tokenizer, model, audio_tokenizer
 
 class SparkTTS:
     """
@@ -355,6 +319,12 @@ class SparkTTS:
 
 
 class SparkTTSRun:
+    def __init__(self):
+        self.tokenizer = None
+        self.model = None
+        self.audio_tokenizer = None
+        self.device = device
+
     @classmethod
     def INPUT_TYPES(s):
         
@@ -378,7 +348,7 @@ class SparkTTSRun:
                 "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
                 "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 "do_sample": ("BOOLEAN", {"default": True}),
-                "unload_model": ("BOOLEAN", {"default": False}),
+                "unload_model": ("BOOLEAN", {"default": True}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
@@ -408,8 +378,10 @@ class SparkTTSRun:
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
-        tokenizer, model, audio_tokenizer = load_models(device, use_cache=True)
-        tts_model = SparkTTS(tokenizer, model, audio_tokenizer, device)
+        if self.model is None:
+            self.tokenizer, self.model, self.audio_tokenizer = load_models(self.device)
+
+        tts_model = SparkTTS(self.tokenizer, self.model, self.audio_tokenizer, self.device)
 
         wav = tts_model.inference(
                                 text,
@@ -429,9 +401,10 @@ class SparkTTSRun:
         audio_tensor = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0).float()
 
         if unload_model:
-            del tokenizer, model, audio_tokenizer
-            clear_cached_models()
             tts_model.cleanup()
+            self.model = None
+            self.tokenizer = None
+            self.audio_tokenizer = None
             gc.collect()
             torch.cuda.empty_cache()
             
@@ -443,6 +416,12 @@ with open(f"{speaker_path}/speakers_info.json", "r", encoding="utf-8") as f:
 speakers = list(speakers_info.keys())
 
 class SparkTTSClone:
+    def __init__(self):
+        self.tokenizer = None
+        self.model = None
+        self.audio_tokenizer = None
+        self.device = device
+
     @classmethod
     def INPUT_TYPES(s):
         
@@ -455,7 +434,7 @@ class SparkTTSClone:
                 "top_p": ("FLOAT", {"default": 0.95, "min": 0, "max": 1, "step": 0.01}),
                 "max_new_tokens": ("INT", {"default": 3000, "min": 500}),
                 "do_sample": ("BOOLEAN", {"default": True}),
-                "unload_model": ("BOOLEAN", {"default": False}),
+                "unload_model": ("BOOLEAN", {"default": True}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             },
             "optional": {
@@ -512,8 +491,10 @@ class SparkTTSClone:
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
-        tokenizer, model, audio_tokenizer = load_models(device, use_cache=True)
-        tts_model = SparkTTS(tokenizer, model, audio_tokenizer, device)
+        if self.model is None:
+            self.tokenizer, self.model, self.audio_tokenizer = load_models(self.device)
+
+        tts_model = SparkTTS(self.tokenizer, self.model, self.audio_tokenizer, self.device)
 
         wav = tts_model.inference(
                                 text,
@@ -529,9 +510,10 @@ class SparkTTSClone:
         audio_tensor = torch.from_numpy(wav).unsqueeze(0).unsqueeze(0).float()
 
         if unload_model:
-            del tokenizer, model, audio_tokenizer
-            clear_cached_models()
             tts_model.cleanup()
+            self.model = None
+            self.tokenizer = None
+            self.audio_tokenizer = None
             gc.collect()
             torch.cuda.empty_cache()
 
