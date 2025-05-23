@@ -318,13 +318,12 @@ class SparkTTS:
         return wav
 
 
+MODEL_CACHE = None
+TOKENIZER = None
+AUDIO_TOKENIZER = None
 class SparkTTSRun:
     def __init__(self):
-        self.tokenizer = None
-        self.model = None
-        self.audio_tokenizer = None
         self.device = device
-
     @classmethod
     def INPUT_TYPES(s):
         
@@ -378,10 +377,11 @@ class SparkTTSRun:
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
-        if self.model is None:
-            self.tokenizer, self.model, self.audio_tokenizer = load_models(self.device)
+        global MODEL_CACHE, TOKENIZER, AUDIO_TOKENIZER
+        if MODEL_CACHE is None:
+            TOKENIZER, MODEL_CACHE, AUDIO_TOKENIZER = load_models(self.device)
 
-        tts_model = SparkTTS(self.tokenizer, self.model, self.audio_tokenizer, self.device)
+        tts_model = SparkTTS(TOKENIZER, MODEL_CACHE, AUDIO_TOKENIZER, self.device)
 
         wav = tts_model.inference(
                                 text,
@@ -402,9 +402,9 @@ class SparkTTSRun:
 
         if unload_model:
             tts_model.cleanup()
-            self.model = None
-            self.tokenizer = None
-            self.audio_tokenizer = None
+            MODEL_CACHE = None
+            TOKENIZER = None
+            AUDIO_TOKENIZER = None
             gc.collect()
             torch.cuda.empty_cache()
             
@@ -417,9 +417,6 @@ speakers = list(speakers_info.keys())
 
 class SparkTTSClone:
     def __init__(self):
-        self.tokenizer = None
-        self.model = None
-        self.audio_tokenizer = None
         self.device = device
 
     @classmethod
@@ -491,10 +488,11 @@ class SparkTTSClone:
             torch.cuda.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
-        if self.model is None:
-            self.tokenizer, self.model, self.audio_tokenizer = load_models(self.device)
+        global MODEL_CACHE, TOKENIZER, AUDIO_TOKENIZER
+        if MODEL_CACHE is None:
+            TOKENIZER, MODEL_CACHE, AUDIO_TOKENIZER = load_models(self.device)
 
-        tts_model = SparkTTS(self.tokenizer, self.model, self.audio_tokenizer, self.device)
+        tts_model = SparkTTS(TOKENIZER, MODEL_CACHE, AUDIO_TOKENIZER, self.device)
 
         wav = tts_model.inference(
                                 text,
@@ -511,9 +509,9 @@ class SparkTTSClone:
 
         if unload_model:
             tts_model.cleanup()
-            self.model = None
-            self.tokenizer = None
-            self.audio_tokenizer = None
+            MODEL_CACHE = None
+            TOKENIZER = None
+            AUDIO_TOKENIZER = None
             gc.collect()
             torch.cuda.empty_cache()
 
